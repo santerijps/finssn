@@ -18,6 +18,6 @@ c_tcc: finssngen.c bin_dir
 	upx -9 bin/main.tcc.exe
 
 bin_dir: finssngen.c
-	mkdir bin
+	if not exist bin mkdir bin
 
 all: c_gcc c_clang c_tcc c_zig
