@@ -3,6 +3,16 @@
 #include <string.h>
 #include <time.h>
 
+#define ErrorExit(_Fmt, ...)\
+  fprintf(stderr, "ERROR: " _Fmt "\n", ##__VA_ARGS__);\
+  return 1
+
+#define ErrorExitIf(_Expr, _Fmt, ...)\
+  if (_Expr) {\
+    fprintf(stderr, "ERROR: " _Fmt "\n", ##__VA_ARGS__);\
+    return 1;\
+  }
+
 int main(int argc, char **argv) {
 
   time_t seconds = time(NULL);
@@ -19,6 +29,7 @@ int main(int argc, char **argv) {
         "Usage: %s [options]\n"
         "\n"
         "Efficiently generates every valid Finnish social security number.\n"
+        "Valid SSN's are generated for birth dates between the years 1800 and 2099 (inclusive).\n"
         "\n"
         "Options:\n"
         "  -h, --help\n"
@@ -45,11 +56,18 @@ int main(int argc, char **argv) {
     }
   }
 
+  ErrorExitIf(
+    from_year < 1800 || from_year > 2099 || to_year < 1800 || to_year > 2099,
+    "The options --from (%d) and --to (%d) must be within 1800 - 2099 (inclusive).", from_year, to_year
+  );
+
+  ErrorExitIf (
+    from_year >= to_year,
+    "The option --from (%d) must be smaller than --to (%d).", from_year, to_year
+  );
+
   FILE *out_file = fopen(out_file_path, "wb");
-  if (out_file == NULL) {
-    fprintf(stderr, "Failed to open %s for writing!\n", out_file_path);
-    return 1;
-  }
+  ErrorExitIf(out_file == NULL, "Failed to open output file (%s) for writing.", out_file_path);
 
   unsigned short year = from_year, individual_number;
   unsigned char month = 1, day = 1, days_in_month;
@@ -135,8 +153,7 @@ int main(int argc, char **argv) {
             case 29: check_symbol = 'X'; break;
             case 30: check_symbol = 'Y'; break;
             default:
-              fprintf(stderr, "Invalid modulo in check symbol!\n");
-              return 1;
+              ErrorExit("Invalid modulo in check symbol. This error should never occur ;)");
           }
 
           int bytes_written = fprintf(
@@ -146,11 +163,7 @@ int main(int argc, char **argv) {
             check_symbol
           );
 
-          if (bytes_written != 12) {
-            fprintf(stderr, "Failed to write correct amount of SSN bytes to file!\n");
-            return 1;
-          }
-
+          ErrorExitIf(bytes_written != 12, "Failed to write correct amount of SSN bytes to file.");
           output_lines_written += 1;
 
         }
@@ -167,10 +180,7 @@ int main(int argc, char **argv) {
 
   } while (year < to_year);
 
-  if (fclose(out_file) != 0) {
-    fprintf(stderr, "Failed to close ouput file!\n");
-    return 1;
-  }
+  ErrorExitIf(fclose(out_file) != 0, "Failed to close output file (%s).", out_file_path);
 
   if (!quiet) {
     fprintf(stderr, "Wrote %d lines!\n", output_lines_written);
