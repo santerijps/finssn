@@ -133,7 +133,7 @@ int main(int argc, char **argv) {
         }
 
         int bytes_written = fprintf(
-          out_file, "%02u%02u%2u%c%03u%c\n",
+          out_file, "%02u%02u%02u%c%03u%c\n",
           day, month, year % 100,
           century_symbol, individual_number,
           check_symbol
