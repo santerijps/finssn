@@ -78,74 +78,82 @@ int main(int argc, char **argv) {
 
     for (; day <= days_in_month; day++) {
 
-      switch (year / 100) {
+      char nineteenth_century_symbols[1]    = {'+'};
+      char twentieth_century_symbols[6]     = {'-', 'U', 'V', 'W', 'X', 'Y'};
+      char twenty_first_century_symbols[6]  = {'A', 'B', 'C', 'D', 'E', 'F'};
+      char *century_symbol_array = NULL;
+      unsigned char century = year / 100;
+
+      switch (century) {
         case 18:
-          century_symbol = '+';
+          century_symbol_array = nineteenth_century_symbols;
           break;
         case 19:
-          century_symbol = '-';
+          century_symbol_array = twentieth_century_symbols;
           break;
         default:
-          century_symbol = 'A';
+          century_symbol_array = twenty_first_century_symbols;
           break;
       }
 
-      for (individual_number = 2; individual_number < 900; individual_number++) {
+      for (unsigned char i = 0; i < (century == 18 ? 1 : 6); i++) {
+        century_symbol = century_symbol_array[i];
+        for (individual_number = 2; individual_number < 900; individual_number++) {
+          char buf[10] = {0};
+          sprintf(buf, "%02u%02u%2u%03u", day, month, year % 100, individual_number);
 
-        char buf[10] = {0};
-        sprintf(buf, "%02u%02u%2u%03u", day, month, year % 100, individual_number);
+          switch ((atoi(buf) % 31)) {
+            case  0: check_symbol = '0'; break;
+            case  1: check_symbol = '1'; break;
+            case  2: check_symbol = '2'; break;
+            case  3: check_symbol = '3'; break;
+            case  4: check_symbol = '4'; break;
+            case  5: check_symbol = '5'; break;
+            case  6: check_symbol = '6'; break;
+            case  7: check_symbol = '7'; break;
+            case  8: check_symbol = '8'; break;
+            case  9: check_symbol = '9'; break;
+            case 10: check_symbol = 'A'; break;
+            case 11: check_symbol = 'B'; break;
+            case 12: check_symbol = 'C'; break;
+            case 13: check_symbol = 'D'; break;
+            case 14: check_symbol = 'E'; break;
+            case 15: check_symbol = 'F'; break;
+            case 16: check_symbol = 'H'; break;
+            case 17: check_symbol = 'J'; break;
+            case 18: check_symbol = 'K'; break;
+            case 19: check_symbol = 'L'; break;
+            case 20: check_symbol = 'M'; break;
+            case 21: check_symbol = 'N'; break;
+            case 22: check_symbol = 'P'; break;
+            case 23: check_symbol = 'R'; break;
+            case 24: check_symbol = 'S'; break;
+            case 25: check_symbol = 'T'; break;
+            case 26: check_symbol = 'U'; break;
+            case 27: check_symbol = 'V'; break;
+            case 28: check_symbol = 'W'; break;
+            case 29: check_symbol = 'X'; break;
+            case 30: check_symbol = 'Y'; break;
+            default:
+              fprintf(stderr, "Invalid modulo in check symbol!\n");
+              return 1;
+          }
 
-        switch ((atoi(buf) % 31)) {
-          case  0: check_symbol = '0'; break;
-          case  1: check_symbol = '1'; break;
-          case  2: check_symbol = '2'; break;
-          case  3: check_symbol = '3'; break;
-          case  4: check_symbol = '4'; break;
-          case  5: check_symbol = '5'; break;
-          case  6: check_symbol = '6'; break;
-          case  7: check_symbol = '7'; break;
-          case  8: check_symbol = '8'; break;
-          case  9: check_symbol = '9'; break;
-          case 10: check_symbol = 'A'; break;
-          case 11: check_symbol = 'B'; break;
-          case 12: check_symbol = 'C'; break;
-          case 13: check_symbol = 'D'; break;
-          case 14: check_symbol = 'E'; break;
-          case 15: check_symbol = 'F'; break;
-          case 16: check_symbol = 'H'; break;
-          case 17: check_symbol = 'J'; break;
-          case 18: check_symbol = 'K'; break;
-          case 19: check_symbol = 'L'; break;
-          case 20: check_symbol = 'M'; break;
-          case 21: check_symbol = 'N'; break;
-          case 22: check_symbol = 'P'; break;
-          case 23: check_symbol = 'R'; break;
-          case 24: check_symbol = 'S'; break;
-          case 25: check_symbol = 'T'; break;
-          case 26: check_symbol = 'U'; break;
-          case 27: check_symbol = 'V'; break;
-          case 28: check_symbol = 'W'; break;
-          case 29: check_symbol = 'X'; break;
-          case 30: check_symbol = 'Y'; break;
-          default:
-            fprintf(stderr, "Invalid modulo in check symbol!\n");
+          int bytes_written = fprintf(
+            out_file, "%02u%02u%02u%c%03u%c\n",
+            day, month, year % 100,
+            century_symbol, individual_number,
+            check_symbol
+          );
+
+          if (bytes_written != 12) {
+            fprintf(stderr, "Failed to write correct amount of SSN bytes to file!\n");
             return 1;
+          }
+
+          output_lines_written += 1;
+
         }
-
-        int bytes_written = fprintf(
-          out_file, "%02u%02u%02u%c%03u%c\n",
-          day, month, year % 100,
-          century_symbol, individual_number,
-          check_symbol
-        );
-
-        if (bytes_written != 12) {
-          fprintf(stderr, "Failed to write correct amount of SSN bytes to file!\n");
-          return 1;
-        }
-
-        output_lines_written += 1;
-
       }
     }
 
