@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
         century_symbol = century_symbol_array[i];
         for (individual_number = 2; individual_number < 900; individual_number++) {
           char buf[10] = {0};
-          sprintf(buf, "%02u%02u%2u%03u", day, month, year % 100, individual_number);
+          sprintf(buf, "%02u%02u%02u%03u", day, month, year % 100, individual_number);
 
           switch ((atoi(buf) % 31)) {
             case  0: check_symbol = '0'; break;
