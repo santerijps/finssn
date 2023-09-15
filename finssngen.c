@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 
   char *out_file_path = "out.txt";
   unsigned short from_year = 1900, to_year = current_time->tm_year + 1900 + 1;
-  unsigned char quiet = 0;
+  unsigned char quiet = 0, write_to_stdout = 0;
 
   for (int i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
         "Options:\n"
         "  -h, --help\n"
         "  -q, --quiet\n"
+        "  -s, --stdout\n"
         "  -o, --out-file     {output file path (default = \"out.txt\")}\n"
         "  --from             {inclusive year (default = 1900)}\n"
         "  --to               {exclusive year (default = current year + 1)}\n"
@@ -44,6 +45,9 @@ int main(int argc, char **argv) {
     }
     else if (!strcmp(argv[i], "-q") || !strcmp(argv[i], "--quiet")) {
       quiet = 1;
+    }
+    else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--stdout")) {
+      write_to_stdout = 1;
     }
     else if ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--out-file")) && (i + 1 < argc)) {
       out_file_path = argv[++i];
@@ -157,7 +161,8 @@ int main(int argc, char **argv) {
           }
 
           int bytes_written = fprintf(
-            out_file, "%02u%02u%02u%c%03u%c\n",
+            write_to_stdout ? stdout : out_file,
+            "%02u%02u%02u%c%03u%c\n",
             day, month, year % 100,
             century_symbol, individual_number,
             check_symbol
