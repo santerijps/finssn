@@ -3,26 +3,20 @@
 #include <string.h>
 #include <time.h>
 
-#define ErrorExit(_Fmt, ...)\
-  fprintf(stderr, "ERROR: " _Fmt "\n", ##__VA_ARGS__);\
-  return 1
 
-#define ErrorExitIf(_Expr, _Fmt, ...)\
-  if (_Expr) {\
-    fprintf(stderr, "ERROR: " _Fmt "\n", ##__VA_ARGS__);\
-    return 1;\
-  }
+errno_t main(int argc, char **argv) {
 
-int main(int argc, char **argv) {
-
+  errno_t error = 0;
   time_t seconds = time(NULL);
   struct tm *current_time = localtime(&seconds);
 
+  FILE *out_file = NULL;
   char *out_file_path = "out.txt";
   unsigned short from_year = 1900, to_year = current_time->tm_year + 1900 + 1;
   unsigned char quiet = 0, write_to_stdout = 0;
 
   for (int i = 1; i < argc; i++) {
+
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
       fprintf(
         stderr,
@@ -33,45 +27,56 @@ int main(int argc, char **argv) {
         "\n"
         "Options:\n"
         "  -h, --help\n"
-        "  -q, --quiet\n"
-        "  -s, --stdout\n"
+        "  -q, --quiet        (Don't log messages)\n"
+        "  -s, --stdout       (Print SSNs to stdout)\n"
         "  -o, --out-file     {output file path (default = \"out.txt\")}\n"
         "  --from             {inclusive year (default = 1900)}\n"
         "  --to               {exclusive year (default = current year + 1)}\n"
         "\n"
         , argv[0]
       );
-      return 0;
+      goto CLEAN_UP;
     }
+
     else if (!strcmp(argv[i], "-q") || !strcmp(argv[i], "--quiet")) {
       quiet = 1;
     }
+
     else if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--stdout")) {
       write_to_stdout = 1;
     }
+
     else if ((!strcmp(argv[i], "-o") || !strcmp(argv[i], "--out-file")) && (i + 1 < argc)) {
       out_file_path = argv[++i];
     }
+
     else if (!strcmp(argv[i], "--from") && (i + 1 < argc)) {
       from_year = atoi(argv[++i]);
     }
+
     else if (!strcmp(argv[i], "--to") && (i + 1 < argc)) {
       to_year = atoi(argv[++i]);
     }
+
   }
 
-  ErrorExitIf(
-    from_year < 1800 || from_year > 2099 || to_year < 1800 || to_year > 2099,
-    "The options --from (%d) and --to (%d) must be within 1800 - 2099 (inclusive).", from_year, to_year
-  );
+  if (from_year < 1800 || from_year > 2099 || to_year < 1800 || to_year > 2099) {
+    fprintf(stderr, "The options --from (%d) and --to (%d) must be within 1800 - 2099 (inclusive).", from_year, to_year);
+    error = 1;
+    goto CLEAN_UP;
+  }
 
-  ErrorExitIf (
-    from_year >= to_year,
-    "The option --from (%d) must be smaller than --to (%d).", from_year, to_year
-  );
+  if (from_year >= to_year) {
+    fprintf(stderr, "The option --from (%d) must be smaller than --to (%d)", from_year, to_year);
+    error = 1;
+    goto CLEAN_UP;
+  }
 
-  FILE *out_file = fopen(out_file_path, "wb");
-  ErrorExitIf(out_file == NULL, "Failed to open output file (%s) for writing.", out_file_path);
+  if ((out_file = fopen(out_file_path, "wb")) == NULL) {
+    fprintf(stderr, "Failed to open output file (%s) for writing.", out_file_path);
+    error = 1;
+    goto CLEAN_UP;
+  }
 
   unsigned short year = from_year, individual_number;
   unsigned char month = 1, day = 1, days_in_month;
@@ -120,6 +125,7 @@ int main(int argc, char **argv) {
 
       for (unsigned char i = 0; i < (century == 18 ? 1 : 6); i++) {
         century_symbol = century_symbol_array[i];
+
         for (individual_number = 2; individual_number < 900; individual_number++) {
           char buf[10] = {0};
           sprintf(buf, "%02u%02u%02u%03u", day, month, year % 100, individual_number);
@@ -156,8 +162,11 @@ int main(int argc, char **argv) {
             case 28: check_symbol = 'W'; break;
             case 29: check_symbol = 'X'; break;
             case 30: check_symbol = 'Y'; break;
-            default:
-              ErrorExit("Invalid modulo in check symbol. This error should never occur ;)");
+            default: {
+              fprintf(stderr, "Invalid modulo in check symbol. This error should never occur ;)");
+              error = 1;
+              goto CLEAN_UP;
+            }
           }
 
           int bytes_written = fprintf(
@@ -168,7 +177,12 @@ int main(int argc, char **argv) {
             check_symbol
           );
 
-          ErrorExitIf(bytes_written != 12, "Failed to write correct amount of SSN bytes to file.");
+          if (bytes_written != 12) {
+            fprintf(stderr, "Failed to write correct amount of SSN bytes to file.");
+            error = 1;
+            goto CLEAN_UP;
+          }
+
           output_lines_written += 1;
 
         }
@@ -185,11 +199,17 @@ int main(int argc, char **argv) {
 
   } while (year < to_year);
 
-  ErrorExitIf(fclose(out_file) != 0, "Failed to close output file (%s).", out_file_path);
-
   if (!quiet) {
     fprintf(stderr, "Wrote %d lines!\n", output_lines_written);
   }
 
-  return 0;
+CLEAN_UP:
+
+  if (out_file != NULL && fclose(out_file)) {
+    fprintf(stderr, "Failed to close output file (%s).", out_file_path);
+    error = 1;
+  }
+
+  return error;
+
 }
