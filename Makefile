@@ -1,23 +1,15 @@
-dev:
-	tcc -run finssngen.c -h --from 2023
+cc := gcc
 
-c_gcc: finssngen.c bin_dir
-	gcc -O3 -s -fno-ident -fno-asynchronous-unwind-tables -o bin/main.gcc.exe finssngen.c
-	upx --best -q bin/main.gcc.exe -q
+all: gen rand
 
-c_clang: finssngen.c bin_dir
-	clang -O3 -s -fno-ident -fno-asynchronous-unwind-tables -o bin/main.clang.exe finssngen.c
-	upx -q --best bin/main.clang.exe -q
+gen: bin_dir src/finssn-gen.c
+	$(cc) src/finssn-gen.c -Wall -Wextra -O3 -o bin/finssn-gen.exe
 
-c_zig: finssngen.c bin_dir
-	zig cc -O3 -s -fno-ident -fno-asynchronous-unwind-tables -o bin/main.zig.exe finssngen.c
-	upx -q --best bin/main.zig.exe -q
+rand: bin_dir src/finssn-rand.c
+	$(cc) src/finssn-rand.c -Wall -Wextra -O3 -o bin/finssn-rand.exe
 
-c_tcc: finssngen.c bin_dir
-	tcc -o bin/main.tcc.exe finssngen.c
-	upx -q --best bin/main.tcc.exe -q
+valid: bin_dir src/finssn-valid.c
+	$(cc) src/finssn-valid.c -Wall -Wextra -O3 -o bin/finssn-valid.exe
 
-bin_dir: finssngen.c
+bin_dir:
 	if not exist bin mkdir bin
-
-all: c_gcc c_clang c_tcc c_zig

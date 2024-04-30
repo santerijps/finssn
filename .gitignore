@@ -1,5 +1,4 @@
 bin
 *.exe
 *.txt
-test.c
 .vscode

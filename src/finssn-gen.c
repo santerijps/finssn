@@ -20,7 +20,7 @@ errno_t main(int argc, char **argv) {
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
       fprintf(
         stderr,
-        "Usage: %s [options]\n"
+        "Usage: finssn-gen [options]\n"
         "\n"
         "Efficiently generates every valid Finnish social security number.\n"
         "Valid SSN's are generated for birth dates between the years 1800 and 2099 (inclusive).\n"
@@ -33,7 +33,6 @@ errno_t main(int argc, char **argv) {
         "  --from             {inclusive year (default = 1900)}\n"
         "  --to               {exclusive year (default = current year + 1)}\n"
         "\n"
-        , argv[0]
       );
       goto CLEAN_UP;
     }
@@ -72,7 +71,7 @@ errno_t main(int argc, char **argv) {
     goto CLEAN_UP;
   }
 
-  if ((out_file = fopen(out_file_path, "wb")) == NULL) {
+  if (!write_to_stdout && (out_file = fopen(out_file_path, "wb")) == NULL) {
     fprintf(stderr, "Failed to open output file (%s) for writing.", out_file_path);
     error = 1;
     goto CLEAN_UP;
@@ -205,7 +204,7 @@ errno_t main(int argc, char **argv) {
 
 CLEAN_UP:
 
-  if (out_file != NULL && fclose(out_file)) {
+  if (!write_to_stdout && out_file != NULL && fclose(out_file)) {
     fprintf(stderr, "Failed to close output file (%s).", out_file_path);
     error = 1;
   }
